@@ -85,7 +85,7 @@ if "team_order" in st.session_state:
     # Show grouped teams only if all have picked
     if st.session_state.current_number > 6:
         st.divider()
-        st.markdown("### 🏟 Group Teams")
+        st.markdown("### 👥 Group Teams")
 
         group_a_teams = [default_group_A]
         group_b_teams = [default_group_B]
