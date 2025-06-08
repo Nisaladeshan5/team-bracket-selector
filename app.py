@@ -1,72 +1,115 @@
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
-import json
+import random
 
-# -------------------- Firebase Setup --------------------
+st.set_page_config(page_title="Team Bracket Picker", layout="centered")
+st.title("🏆 Team Bracket Picker with Groups A & B")
 
-# Upload your service account JSON in Streamlit sidebar
-st.sidebar.title("Firebase Setup")
-firebase_file = st.sidebar.file_uploader("Upload Firebase Service Account JSON", type="json")
+# Fixed teams
+fixed_teams = ["UOM", "USJ", "UOC", "UOP", "SUSL", "RUSL"]
 
-if firebase_file and "firebase_initialized" not in st.session_state:
-    cred = credentials.Certificate(json.load(firebase_file))
-    firebase_admin.initialize_app(cred)
-    st.session_state["firebase_initialized"] = True
-    db = firestore.client()
-elif "firebase_initialized" in st.session_state:
-    db = firestore.client()
+# Default group names as team entries
+default_group_A = "Jaffna"
+default_group_B = "Jaffna Legends"
+
+# Initialize session state variables
+if "randomize_count" not in st.session_state:
+    st.session_state.randomize_count = 0
+
+# Random assignment button
+if st.session_state.randomize_count < 2:
+    if st.button("🎲 Randomly Assign Numbers to Teams"):
+        shuffled_teams = random.sample(fixed_teams, len(fixed_teams))
+        st.session_state.team_order = {i + 1: shuffled_teams[i] for i in range(6)}
+        st.session_state.color_to_group = {}
+        st.session_state.revealed_colors = {}
+        st.session_state.team_picks = {}
+        st.session_state.current_number = 1
+        st.session_state.randomize_count += 1
+
+        # Color setup and random group assignment
+        colors = ["🔴 Red", "🔵 Blue", "🟢 Green", "🟠 Orange", "🟣 Purple", "🟡 Yellow"]
+        group_labels = ["A", "A", "A", "B", "B", "B"]
+        shuffled_groups = random.sample(group_labels, len(group_labels))
+
+        for i, color in enumerate(colors):
+            st.session_state.color_to_group[color] = shuffled_groups[i]
+            st.session_state.revealed_colors[color] = False
 else:
-    st.warning("Please upload your Firebase credentials in the sidebar to begin.")
-    st.stop()
+    st.warning("⚠️ You have already randomized twice. Final team order is locked.")
 
-# -------------------- Configuration --------------------
+# Main display
+if "team_order" in st.session_state:
+    st.markdown("### 📋 Team Number Assignments")
+    card_cols = st.columns(3)
+    for i in range(1, 7):
+        team = st.session_state.team_order[i]
+        with card_cols[(i - 1) % 3]:
+            st.markdown(
+                f"""
+                <div style="border: 1px solid #ccc; border-radius: 8px; padding: 10px;
+                            text-align: center; background-color: #fff;
+                            box-shadow: 1px 1px 4px rgba(0,0,0,0.05); margin-bottom: 8px;">
+                    <div style="font-size: 14px; color: #555;">Number</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #4CAF50;">{i}</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-top: 4px;">{team}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-# Map colors to brackets
-color_bracket_map = {
-    "Red": "A",
-    "Blue": "A",
-    "Green": "A",
-    "Orange": "B",
-    "Purple": "B",
-    "Yellow": "B"
-}
+    # Current team to pick color
+    current_number = st.session_state.current_number
+    if current_number <= 6:
+        current_team = st.session_state.team_order[current_number]
+        st.subheader(f"🎯 Team **{current_team}** (Number {current_number}), pick a color:")
+    else:
+        st.success("✅ All teams have picked colors!")
 
-colors = list(color_bracket_map.keys())
+    # Color picking interface
+    cols = st.columns(3)
+    colors = list(st.session_state.color_to_group.keys())
+    for i, color in enumerate(colors):
+        col = cols[i % 3]
+        with col:
+            if st.session_state.revealed_colors[color]:
+                picked_by = [k for k, v in st.session_state.team_picks.items() if v == color][0]
+                st.success(f"{color} → {picked_by}")
+            elif current_number <= 6:
+                if st.button(color):
+                    team = st.session_state.team_order[current_number]
+                    st.session_state.team_picks[team] = color
+                    st.session_state.revealed_colors[color] = True
+                    st.session_state.current_number += 1
+                    st.rerun()
 
-# Firestore collection name
-COLLECTION = "team_brackets"
+    # Show grouped teams only if all have picked
+    if st.session_state.current_number > 6:
+        st.divider()
+        st.markdown("### 🏟 Group Teams")
 
-# -------------------- UI --------------------
+        group_a_teams = [default_group_A]
+        group_b_teams = [default_group_B]
 
-st.title("🏆 Team Bracket Selector")
-st.write("Select a color. Behind each color is a hidden bracket assignment (A or B).")
+        for team, color in st.session_state.team_picks.items():
+            group = st.session_state.color_to_group[color]
+            if group == "A":
+                group_a_teams.append(team)
+            else:
+                group_b_teams.append(team)
 
-# Load taken colors from Firestore
-taken_docs = db.collection(COLLECTION).stream()
-taken_colors = {doc.id: doc.to_dict() for doc in taken_docs}
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("#### 🅰️ Group A")
+            for t in group_a_teams:
+                st.write(f"- {t}")
+        with col2:
+            st.markdown("#### 🅱️ Group B")
+            for t in group_b_teams:
+                st.write(f"- {t}")
 
-# Display buttons for colors
-cols = st.columns(3)
-for i, color in enumerate(colors):
-    with cols[i % 3]:
-        if color in taken_colors:
-            st.button(f"{color} ❌ (Taken)", disabled=True, key=color)
-        else:
-            if st.button(color, key=color):
-                # Assign bracket and store selection
-                bracket = color_bracket_map[color]
-                db.collection(COLLECTION).document(color).set({
-                    "bracket": bracket
-                })
-                st.success(f"You selected {color} and you are in **Bracket {bracket}**")
-                st.experimental_rerun()  # Refresh to disable color for others
-
-# -------------------- Reset Button (admin use only) --------------------
-
-with st.sidebar.expander("🔐 Admin: Reset Selections"):
-    if st.button("Reset All Selections"):
-        for color in colors:
-            db.collection(COLLECTION).document(color).delete()
-        st.success("All selections have been reset.")
-        st.experimental_rerun()
+    # Reset button
+    st.divider()
+    if st.button("🔄 Reset All"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
