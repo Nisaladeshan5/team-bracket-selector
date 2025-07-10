@@ -2,7 +2,12 @@ import streamlit as st
 import random
 
 st.set_page_config(page_title="Team Bracket Picker", layout="centered")
-st.title("🏆 Team Bracket Picker with Groups A & B")
+
+# Main title for the championship
+st.title("🏆 Yarl 16 Elle Championship 2025 🏆")
+
+# Subtitle (creative addition)
+st.markdown("<h2 style='text-align: center; color: #0077B6;'>Team Bracket Picker - Groups A & B</h2>", unsafe_allow_html=True)
 
 # Fixed teams
 fixed_teams = ["UOM", "USJ", "UOC", "UOP", "SUSL", "UWU"]
