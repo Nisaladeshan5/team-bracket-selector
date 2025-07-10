@@ -4,10 +4,10 @@ import random
 st.set_page_config(page_title="Team Bracket Picker", layout="centered")
 
 # Main title for the championship
-st.markdown("<h1 style='text-align: center; color: #0077B6;'>🏆 Yarl 16 Elle Championship 2025 🏆</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #FFFFFF;'>🏆 Yarl 16 Elle Championship 2025 🏆</h1>", unsafe_allow_html=True)
 
 # Subtitle (creative addition)
-st.markdown("<h2 style='text-align: left; color: #333;'>Team Bracket Picker - Groups A & B</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: left; color: #0077B6;'>Team Bracket Picker - Groups A & B</h2>", unsafe_allow_html=True)
 
 # Fixed teams
 fixed_teams = ["UOM", "USJ", "UOC", "UOP", "SUSL", "UWU"]
