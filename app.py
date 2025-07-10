@@ -5,7 +5,7 @@ st.set_page_config(page_title="Team Bracket Picker", layout="centered")
 st.title("🏆 Team Bracket Picker with Groups A & B")
 
 # Fixed teams
-fixed_teams = ["UOM", "USJ", "UOC", "UOP", "SUSL", "RUSL"]
+fixed_teams = ["UOM", "USJ", "UOC", "UOP", "SUSL", "UWU"]
 
 # Default group names as team entries
 default_group_A = "Jaffna"
